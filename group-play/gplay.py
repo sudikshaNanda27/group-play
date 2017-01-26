@@ -18,6 +18,11 @@ thread = None
 def index():
     return render_template('index.html', async_mode=socketio.async_mode)
 
+
+@app.route('/player')
+def player():
+    return render_template('player.html')
+
 @app.route('/song.mp3')
 def  song():
     return send_file('/home/sanket/Downloads/The Chainsmokers - Don\'t Let Me Down ft. Daya [mp3clan.com].mp3')
@@ -84,11 +89,11 @@ def ping_pong():
 
 
 @socketio.on('connect')
-def test_connect():
+def connect():
     # global thread
     # if thread is None:
     #     thread = socketio.start_background_task(target=background_thread)
-    emit('my_response', {'data': 'Connected', 'count': 0})
+    emit('my_response', {'data': 'Connected to server!', 'count': 0})
 
 
 @socketio.on('disconnect')

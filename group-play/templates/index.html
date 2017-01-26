@@ -7,20 +7,47 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/howler.js/2.0.2/howler.js"></script>
     <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
+
+            // connection to ws-server
+            var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
+
+            //called when connection is established
+            socket.on('connect', function() {
+                    console.log("Connection ACK from server.")
+                });
+
+            socket.on('my_response', function(msg) {
+                    $('#log').append('<br>' + $('<div/>').text('Received #' +': ' + msg.data).html());
+                });
+            socket.on('join_success', function(msg) {
+                $('#log').append('<br>' + $('<div/>').text('Received #' +': ' + msg.data).html());
+            });
+
+            // measurement of latency
+            var ping_pong_times = [];
+            var start_time;
+            window.setInterval(function() {
+                start_time = (new Date).getTime();
+                socket.emit('my_ping');
+            }, 1000);
+          
+            socket.on('my_pong', function() {
+                var latency = (new Date).getTime() - start_time;
+                ping_pong_times.push(latency);
+                ping_pong_times = ping_pong_times.slice(-30); // keep last 30 samples
+                var sum = 0;
+                for (var i = 0; i < ping_pong_times.length; i++)
+                    sum += ping_pong_times[i];
+                $('#ping-pong').text(Math.round(10 * sum / ping_pong_times.length) / 10);
+            });
+
             $('form#join').submit(function(event) {
 
-                // connection to ws-server
-                var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
-
-                //called when connection is established
-                socket.on('connect', function() {
-                    socket.emit('my_event', {data: 'I\'m connected!'});
-                    socket.emit('join', {room: $('#join_room').val()});
-                    
-                });
+                socket.emit('join', {room: $('#join_room').val()});
+                
                 
                 //download song as soon as you join the room
-                song=location.protocol + "//" + document.domain + ':' + location.port + "/song.mp3";
+                song = location.protocol + "//" + document.domain + ':' + location.port + "/song.mp3";
                 console.log(song)
                 Howler.unload()
                 //the player
@@ -29,6 +56,7 @@
                     preload: true,
                     onload: function(){console.log('loaded');}
                 });
+
 
                 // master controls                
                 $("#play").click(function(){
@@ -41,43 +69,20 @@
                     socket.emit('stop',{room: $('#join_room').val()});
                 });
 
+
                 //control listeners 
                 socket.on('play',function(){
+                    console.log("Received play signal")
                     player.play()
                 });
                 socket.on('pause',function(){
+                    console.log("Received pause signal")
                     player.pause()
                 });
                 socket.on('stop',function(){
+                    console.log('Received stop signal')
                     player.stop()
                 });
-  
-
-                socket.on('my_response', function(msg) {
-                    $('#log').append('<br>' + $('<div/>').text('Received #' +': ' + msg.data).html());
-                });
-                socket.on('join_success', function(msg) {
-                    $('#log').append('<br>' + $('<div/>').text('Received #' +': ' + msg.data).html());
-                });
- 
-                // measurement of latency
-                var ping_pong_times = [];
-                var start_time;
-                window.setInterval(function() {
-                    start_time = (new Date).getTime();
-                    socket.emit('my_ping');
-                }, 1000);
-              
-                socket.on('my_pong', function() {
-                    var latency = (new Date).getTime() - start_time;
-                    ping_pong_times.push(latency);
-                    ping_pong_times = ping_pong_times.slice(-30); // keep last 30 samples
-                    var sum = 0;
-                    for (var i = 0; i < ping_pong_times.length; i++)
-                        sum += ping_pong_times[i];
-                    $('#ping-pong').text(Math.round(10 * sum / ping_pong_times.length) / 10);
-                });
-
 
             return false;     
             });
