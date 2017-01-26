@@ -76,10 +76,10 @@ def close(message):
     close_room(message['room'])
 
 
-@socketio.on('disconnect_request')
-def disconnect_request():
-    emit('my_response',
-         {'data': 'Disconnected!'})
+@socketio.on('disconnect')
+def client_disconnect():
+    print "disconnected client: " + request.sid
+    emit('my_response', {'data': 'Disconnected from server!', 'count': 0})
     disconnect()
 
 
@@ -89,16 +89,11 @@ def ping_pong():
 
 
 @socketio.on('connect')
-def connect():
+def client_connect():
     # global thread
     # if thread is None:
     #     thread = socketio.start_background_task(target=background_thread)
-    emit('my_response', {'data': 'Connected to server!', 'count': 0})
-
-
-@socketio.on('disconnect')
-def test_disconnect():
-    print('Client disconnected', request.sid)
+    emit('my_response', {'data': 'Okay, you are connected to server!', 'count': 0})
 
 
 if __name__ == '__main__':
