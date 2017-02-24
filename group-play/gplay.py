@@ -19,6 +19,10 @@ def index():
     return render_template('index.html', async_mode=socketio.async_mode)
 
 
+@app.route('/v')
+def video():
+    return render_template('video.html', async_mode=socketio.async_mode)
+
 @app.route('/player')
 def player():
     return render_template('player.html')
@@ -34,16 +38,22 @@ def play(message):
     emit('play',{},room=room)
 
 @socketio.on('pause')
-def play(message):
+def pause(message):
     room = message['room']
     print "pausing in: " + room
     emit('pause',{},room=room)
 
 @socketio.on('stop')
-def play(message):
+def stop(message):
     room = message['room']
     print "stopping in: " + room
     emit('stop',{},room=room)
+
+@socketio.on('seek')
+def seek(message):
+    room = message['room']
+    print "seeeking in: " + room
+    emit('seek',{'time':message['time']},room=room)
 
 
 @socketio.on('my_event')
@@ -93,7 +103,7 @@ def client_connect():
     # global thread
     # if thread is None:
     #     thread = socketio.start_background_task(target=background_thread)
-    emit('my_response', {'data': 'Okay, you are connected to server!', 'count': 0})
+    emit('my_response', {'data': 'Hello from the server side...!', 'count': 0})
 
 
 if __name__ == '__main__':

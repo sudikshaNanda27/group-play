@@ -1,16 +1,16 @@
-<!DOCTYPE HTML>
+<!doctype html>
 <html>
 <head>
-    <title>Group-Play Test</title>
-    <script type="text/javascript" src="http://code.jquery.com/jquery-1.4.2.min.js"></script>
-    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/howler.js/2.0.2/howler.js"></script>
-    <script type="text/javascript" charset="utf-8">
+  <link href="//vjs.zencdn.net/5.11/video-js.min.css" rel="stylesheet">
+  <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
+  <script type="text/javascript" src="http://code.jquery.com/jquery-1.4.2.min.js"></script>
+  <script src="//vjs.zencdn.net/5.11/video.min.js"></script>
+  <script type="text/javascript" charset="utf-8">
         $(document).ready(function() {
 
             // connection to ws-server
             var socket = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
-
+            console.log(location.protocol + '//' + document.domain + ':' + location.port)
             //called when connection is established
             socket.on('connect', function() {
                     console.log("Connection ACK from server.")
@@ -49,18 +49,28 @@
                 
                 
                 //download song as soon as you join the room
-                song = location.protocol + "//" + document.domain + ':' + location.port + "/song.mp3";
-                console.log(song)
-                Howler.unload()
-                //the player
-                var player = new Howl({
-                    src: [song],
-                    preload: true,
-                    onload: function(){$('#log').append('<br>' + $('<div/>').text('Song Loaded!').html());}
+                //song = location.protocol + "//" + document.domain + ':' + location.port + "/song.mp3";
+
+                //setting up video
+                vid = document.getElementById('localvid').files[0];
+                var URL = window.URL || window.webkitURL;
+                vidurl = URL.createObjectURL(vid);
+                var videoNode = document.querySelector('video');
+                var seekBar = document.getElementById("seek-bar");
+
+                videoNode.src = vidurl;
+
+
+                var options = {};
+
+                var player = videojs('my-player', options, function onPlayerReady() {
+                  videojs.log('Your player is ready!');
+                  $('#log').append('<br>' + $('<div/>').text('player ready').html());
+
                 });
 
 
-                // master controls                
+                // master controls              
                 $("#play").click(function(){
                     socket.emit('play',{room: $('#join_room').val()});
                 });                
@@ -70,7 +80,19 @@
                 $("#stop").click(function(){
                     socket.emit('stop',{room: $('#join_room').val()});
                 });
-
+                seekBar.addEventListener("change", function() {
+                  // Calculate the new time
+                  
+                  var time = videoNode.duration * (seekBar.value / 100);
+                  console.log('seeking...'+time)
+                  socket.emit('seek',{room: $('#join_room').val(),time: time});
+                });
+                videoNode.addEventListener("timeupdate", function() {
+                  // Calculate the slider value
+                  var value = (100 / player.duration()) * player.currentTime();
+                  // Update the slider value
+                  seekBar.value = value;
+                });
 
                 //control listeners 
                 socket.on('play',function(){
@@ -88,6 +110,11 @@
                     console.log('Received stop signal')
                     player.stop()
                 });
+                socket.on('seek',function(msg){
+                    console.log('Received seek signal')
+                    player.currentTime(msg.time);
+                });
+
 
             return false;     
             });
@@ -100,25 +127,39 @@
 </head>
 
 <body>
+
     <h1>Group-Play Test</h1>
     <p>Async mode is: <b>{{ async_mode }}</b></p>
     <p>Average ping/pong latency: <b><span id="ping-pong"></span>ms</b></p>
     <h2>Send:</h2>
+    <input type="file" id="localvid" accept="video/*"/>
+
     <form id="join" method="POST" action='#'>
         <input type="text" name="join_room" id="join_room" value="default" placeholder="Room Name">
         <input type="submit" value="Join Room">
     </form>
 
-    <form id="close" method="POST" action="#">
-        <input type="text" name="close_room" id="close_room" placeholder="Room Name">
-        <input type="submit" value="Close Room">
-    </form>
     <h3> Controls: </h3>
     <button id="play">Play</button>
     <button id="pause">Pause</button>
     <button id="stop">Stop</button>
+    <input type="range" id="seek-bar" value="0">
     <h2>Receive:</h2>
     <div id="log"></div>
+<video
+    id="my-player"
+    class="video-js"
+    preload="auto"
+    data-setup='{}'>
+  <p class="vjs-no-js">
+    To view this video please enable JavaScript, and consider upgrading to a
+    web browser that
+    <a href="http://videojs.com/html5-video-support/" target="_blank">
+      supports HTML5 video
+    </a>
+  </p>
+</video>
 
 </body>
+
 </html>
