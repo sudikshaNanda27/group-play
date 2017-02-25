@@ -23,6 +23,10 @@ def index():
 def video():
     return render_template('video.html', async_mode=socketio.async_mode)
 
+@app.route('/p')
+def peer():
+    return render_template('peer.html', async_mode=socketio.async_mode)
+
 @app.route('/player')
 def player():
     return render_template('player.html')
