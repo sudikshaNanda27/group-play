@@ -91,6 +91,12 @@
                   console.log('seeking...'+time)
                   socket.emit('seek',{room: $('#join_room').val(),time: time});
                 });
+                videoNode.addEventListener("timeupdate", function() {
+                  // Calculate the slider value
+                  var value = (100 / player.duration()) * player.currentTime();
+                  // Update the slider value
+                  seekBar.value = value;
+                });
                 $('#full').click(function(){
                     player.requestFullscreen();
                 });
