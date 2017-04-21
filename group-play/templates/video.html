@@ -65,6 +65,7 @@
                 vidurl = URL.createObjectURL(vid);
                 var videoNode = document.querySelector('video');
                 var seekBar = document.getElementById("seek-bar");
+                var volume = document.getElementById("volume");
 
                 videoNode.src = vidurl;
 
@@ -87,20 +88,23 @@
                 });
                 seekBar.addEventListener("change", function() {
                   // Calculate the new time
-                  var time = videoNode.duration * (seekBar.value / 100);
+                  var time = videoNode.duration * (seekBar.value / 300);
                   console.log('seeking...'+time)
                   socket.emit('seek',{room: $('#join_room').val(),time: time});
                 });
                 videoNode.addEventListener("timeupdate", function() {
                   // Calculate the slider value
-                  var value = (100 / player.duration()) * player.currentTime();
+                  var value = (300 / player.duration()) * player.currentTime();
                   // Update the slider value
                   seekBar.value = value;
                 });
                 $('#full').click(function(){
                     player.requestFullscreen();
                 });
-
+                volume.addEventListener("change", function(){
+                    var vol = volume.value
+                    player.volume(vol/100)
+                });
 
                 //control listeners 
                 socket.on('play',function(){
@@ -160,8 +164,9 @@
         <div id="video-controls" class="controls" style="width:100%;z-index: 2147483647;position: fixed;bottom: 3px;">
             <button id="play">Play</button>
             <button id="pause">Pause</button>
-            <input type="range" id="seek-bar" value="0" style="width:60%">
+            <input type="range" id="seek-bar" value="0" style="width:55%" max="300">
             <button id="full">Full</button>
+            <input type="range" id="volume" value="50" style="width:10%">
         </div>
     </div>
     <hr>
